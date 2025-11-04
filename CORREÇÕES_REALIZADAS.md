@@ -1,5 +1,45 @@
 # Correções Realizadas - OrderPanel e Monitor
 
+## Data: 04/11/2024 - Correção de Produtos Compostos no PDV
+
+### 🔧 Problema Corrigido: Consumo Incorreto de Estoque em Produtos Compostos
+
+**Descrição do Problema:**
+Quando vendia um produto composto no PDV, o sistema estava SEMPRE consumindo a matéria-prima, mesmo quando o produto composto tinha estoque disponível. Isso causava consumo desnecessário da matéria-prima.
+
+**Comportamento Incorreto (Anterior):**
+```
+Estoque: Meio Frango = 5 unidades, Frango Inteiro = 10 unidades
+Venda: 1 Meio Frango
+❌ Consumia 1 unidade do Meio Frango
+❌ Consumia 1 unidade do Frango Inteiro (matéria-prima)
+Resultado: Meio Frango = 4, Frango Inteiro = 9 (ERRADO!)
+```
+
+**Comportamento Correto (Atual):**
+```
+Estoque: Meio Frango = 5 unidades, Frango Inteiro = 10 unidades
+Venda: 1 Meio Frango
+✅ Consome 1 unidade do Meio Frango
+✅ NÃO consome Frango Inteiro (tem estoque)
+Resultado: Meio Frango = 4, Frango Inteiro = 10 (CORRETO!)
+```
+
+**Nova Lógica Implementada:**
+1. Sistema verifica se o produto composto tem estoque suficiente
+2. **SE tem estoque:** Consome apenas do estoque do produto composto
+3. **SE NÃO tem estoque:** Aí sim consome da matéria-prima
+4. PDV e Totem podem vender produtos compostos sem estoque (consumindo matéria-prima)
+5. CustomStore continua funcionando normalmente (só vende com estoque disponível)
+
+**Arquivo Modificado:**
+- `/src/pages/PDV.tsx` (linhas 1044-1134)
+
+**Documentação Atualizada:**
+- `/FUNCIONALIDADE_ITENS_COMPOSTOS.md` - Documentação completa da nova lógica com exemplos
+
+---
+
 ## Data: 01/11/2024
 
 ---

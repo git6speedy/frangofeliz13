@@ -45,32 +45,49 @@ Permitir que variações de produtos sejam derivadas de outros produtos (matéri
 
 ### Ao Vender um Item Composto:
 
-**Exemplo:** Cliente compra 1 "Meio Frango Assado Recheado"
+**Regra Principal:** O sistema SEMPRE consome primeiro o estoque do produto composto. Só consome matéria-prima se o estoque estiver insuficiente.
+
+**Exemplo 1:** Cliente compra 1 "Meio Frango Assado Recheado" (COM estoque = 5)
 
 1. ✅ Sistema verifica que é um item composto
-2. ✅ Consome 0.5 unidades da matéria-prima "Frango Assado Recheado" (arredonda para 1)
-3. ✅ Gera 2 unidades de "Meio Frango Assado Recheado" no estoque
-4. ✅ Subtrai 1 unidade vendida
-5. ✅ Estoque final da variação = 1 unidade disponível
+2. ✅ Verifica que há estoque suficiente (5 unidades)
+3. ✅ Consome 1 unidade do estoque do produto composto
+4. ✅ Estoque final da variação = 4 unidades
+5. ✅ Matéria-prima NÃO é consumida
+
+**Exemplo 2:** Cliente compra 3 "Meio Frango Assado Recheado" (COM estoque = 1)
+
+1. ✅ Sistema verifica que é um item composto
+2. ✅ Verifica que NÃO há estoque suficiente (1 < 3)
+3. ✅ Consome 1 unidade do estoque do produto composto
+4. ✅ Faltam 2 unidades → consome matéria-prima
+5. ✅ Consome 1 unidade da matéria-prima (2 vendas / 2 rendimento = 1)
 6. ✅ Registra a transação para possível reversão
+
+**Exemplo 3:** Cliente compra 1 "Meio Frango Assado Recheado" (SEM estoque = 0)
+
+1. ✅ Sistema verifica que é um item composto
+2. ✅ Verifica que NÃO há estoque (0)
+3. ✅ Consome 1 unidade da matéria-prima (1 venda / 2 rendimento = arredonda para 1)
+4. ✅ Registra a transação para possível reversão
 
 ### Cálculo de Consumo de Matéria-Prima:
 
+**IMPORTANTE:** A matéria-prima só é consumida se não houver estoque suficiente do produto composto!
+
 ```
-Matéria-prima consumida = ARREDONDAR_PARA_CIMA(Quantidade vendida / Rendimento)
+Se (Estoque do produto composto >= Quantidade vendida):
+  → Consome APENAS do estoque do produto composto
+  → Matéria-prima NÃO é consumida
+Senão:
+  → Quantidade que falta = Quantidade vendida - Estoque atual
+  → Matéria-prima consumida = ARREDONDAR_PARA_CIMA(Quantidade que falta / Rendimento)
 ```
 
 **Exemplos:**
-- Venda: 1 unidade | Rendimento: 2 → Consome 1 matéria-prima
-- Venda: 3 unidades | Rendimento: 2 → Consome 2 matérias-primas
-- Venda: 2 unidades | Rendimento: 4 → Consome 1 matéria-prima
-
-### Cálculo de Unidades Geradas:
-
-```
-Unidades geradas = Matéria-prima consumida × Rendimento
-Estoque final = Estoque anterior + Unidades geradas - Quantidade vendida
-```
+- Estoque: 5 | Venda: 1 | Rendimento: 2 → Consome 0 matéria-prima (tem estoque)
+- Estoque: 0 | Venda: 1 | Rendimento: 2 → Consome 1 matéria-prima (sem estoque)
+- Estoque: 1 | Venda: 3 | Rendimento: 2 → Consome 1 matéria-prima (faltam 2 unidades)
 
 ---
 
@@ -143,24 +160,44 @@ Produto: Frango Assado Recheado
    └─ Estoque: 0 (será gerado na venda)
 ```
 
-### Venda no PDV:
+### Venda no PDV (Cenário 1 - COM estoque):
 
 ```
+Estoque inicial:
+- Frango Assado Recheado: 10 unidades
+- Meio Frango Assado Recheado: 3 unidades
+
 Cliente compra: 1x Meio Frango Assado Recheado (R$ 20,00)
 
 Processamento automático:
-1. Consome 1 Frango Assado Recheado
-   Estoque antes: 10 → Estoque depois: 9
+1. Verifica que é item composto
+2. Verifica que há estoque (3 >= 1)
+3. Consome 1 unidade do estoque do Meio Frango
 
-2. Gera 2 Meios Frangos
-   Estoque antes: 0 → Estoque depois: 2
+Resultado:
+✅ Frango Assado Recheado: 10 unidades (NÃO CONSUMIU)
+✅ Meio Frango Assado Recheado: 2 unidades
+✅ Cliente recebeu 1 Meio Frango
+✅ Transação NÃO registrada (usou estoque próprio)
+```
 
-3. Vende 1 Meio Frango
-   Estoque depois: 1
+### Venda no PDV (Cenário 2 - SEM estoque):
+
+```
+Estoque inicial:
+- Frango Assado Recheado: 10 unidades
+- Meio Frango Assado Recheado: 0 unidades
+
+Cliente compra: 1x Meio Frango Assado Recheado (R$ 20,00)
+
+Processamento automático:
+1. Verifica que é item composto
+2. Verifica que NÃO há estoque (0 < 1)
+3. Consome 1 Frango Assado Recheado (1 venda / 2 rendimento = arredonda para 1)
 
 Resultado:
 ✅ Frango Assado Recheado: 9 unidades
-✅ Meio Frango Assado Recheado: 1 unidade
+✅ Meio Frango Assado Recheado: 0 unidades (continua em 0, pois vendeu sem estoque)
 ✅ Cliente recebeu 1 Meio Frango
 ✅ Transação registrada para possível reversão
 ```
@@ -169,10 +206,11 @@ Resultado:
 
 ## ⚠️ Observações Importantes
 
-1. **Não venda diretamente matérias-primas usadas em itens compostos** se quiser manter o controle preciso
-2. **Planeje o rendimento cuidadosamente** - uma vez vendido, a transação é calculada com base nele
-3. **Estoque de itens compostos** pode ficar com saldo mesmo após vendas (devido ao rendimento)
-4. **Cancelamentos** ainda precisam ser implementados manualmente por enquanto
+1. **Prioridade de estoque:** O sistema SEMPRE consome primeiro o estoque do produto composto. A matéria-prima só é consumida quando não há estoque suficiente.
+2. **PDV e Totem:** Podem vender produtos compostos mesmo sem estoque (nesse caso, consome da matéria-prima).
+3. **CustomStore:** Só pode vender produtos que tenham estoque disponível (não afetado por esta funcionalidade).
+4. **Planeje o rendimento cuidadosamente** - uma vez vendido, a transação é calculada com base nele.
+5. **Cancelamentos** ainda precisam ser implementados manualmente por enquanto.
 
 ---
 
