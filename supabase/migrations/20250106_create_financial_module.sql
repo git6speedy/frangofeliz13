@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS financial_categories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_financial_categories_store ON financial_categories(store_id);
-CREATE INDEX idx_financial_categories_type ON financial_categories(type);
+CREATE INDEX IF NOT EXISTS idx_financial_categories_store ON financial_categories(store_id);
+CREATE INDEX IF NOT EXISTS idx_financial_categories_type ON financial_categories(type);
 
 -- 2. TABELA DE CONTAS BANCÁRIAS
 -- ============================================
@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_bank_accounts_store ON bank_accounts(store_id);
-CREATE INDEX idx_bank_accounts_active ON bank_accounts(is_active);
+CREATE INDEX IF NOT EXISTS idx_bank_accounts_store ON bank_accounts(store_id);
+CREATE INDEX IF NOT EXISTS idx_bank_accounts_active ON bank_accounts(is_active);
 
 -- 3. TABELA DE CARTÕES DE CRÉDITO
 -- ============================================
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS credit_cards (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_credit_cards_store ON credit_cards(store_id);
-CREATE INDEX idx_credit_cards_active ON credit_cards(is_active);
+CREATE INDEX IF NOT EXISTS idx_credit_cards_store ON credit_cards(store_id);
+CREATE INDEX IF NOT EXISTS idx_credit_cards_active ON credit_cards(is_active);
 
 -- 4. TABELA DE LANÇAMENTOS FINANCEIROS
 -- ============================================
@@ -95,13 +95,13 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_financial_transactions_store ON financial_transactions(store_id);
-CREATE INDEX idx_financial_transactions_category ON financial_transactions(category_id);
-CREATE INDEX idx_financial_transactions_type ON financial_transactions(type);
-CREATE INDEX idx_financial_transactions_status ON financial_transactions(status);
-CREATE INDEX idx_financial_transactions_date ON financial_transactions(transaction_date);
-CREATE INDEX idx_financial_transactions_bank_account ON financial_transactions(bank_account_id);
-CREATE INDEX idx_financial_transactions_credit_card ON financial_transactions(credit_card_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_store ON financial_transactions(store_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_category ON financial_transactions(category_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_type ON financial_transactions(type);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_status ON financial_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_date ON financial_transactions(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_bank_account ON financial_transactions(bank_account_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_credit_card ON financial_transactions(credit_card_id);
 
 -- 5. TABELA DE CONTAS A RECEBER
 -- ============================================
@@ -128,9 +128,9 @@ CREATE TABLE IF NOT EXISTS accounts_receivable (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_accounts_receivable_store ON accounts_receivable(store_id);
-CREATE INDEX idx_accounts_receivable_status ON accounts_receivable(status);
-CREATE INDEX idx_accounts_receivable_due_date ON accounts_receivable(due_date);
+CREATE INDEX IF NOT EXISTS idx_accounts_receivable_store ON accounts_receivable(store_id);
+CREATE INDEX IF NOT EXISTS idx_accounts_receivable_status ON accounts_receivable(status);
+CREATE INDEX IF NOT EXISTS idx_accounts_receivable_due_date ON accounts_receivable(due_date);
 
 -- 6. TABELA QUADRO DOS SONHOS
 -- ============================================
@@ -155,8 +155,8 @@ CREATE TABLE IF NOT EXISTS dream_board (
   completed_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_dream_board_store ON dream_board(store_id);
-CREATE INDEX idx_dream_board_status ON dream_board(status);
+CREATE INDEX IF NOT EXISTS idx_dream_board_store ON dream_board(store_id);
+CREATE INDEX IF NOT EXISTS idx_dream_board_status ON dream_board(status);
 
 -- 7. TABELA DE METAS FINANCEIRAS
 -- ============================================
@@ -177,8 +177,8 @@ CREATE TABLE IF NOT EXISTS financial_goals (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_financial_goals_store ON financial_goals(store_id);
-CREATE INDEX idx_financial_goals_period ON financial_goals(period_start, period_end);
+CREATE INDEX IF NOT EXISTS idx_financial_goals_store ON financial_goals(store_id);
+CREATE INDEX IF NOT EXISTS idx_financial_goals_period ON financial_goals(period_start, period_end);
 
 -- 8. TABELA DE NOTIFICAÇÕES FINANCEIRAS
 -- ============================================
@@ -198,8 +198,8 @@ CREATE TABLE IF NOT EXISTS financial_notifications (
   read_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_financial_notifications_store ON financial_notifications(store_id);
-CREATE INDEX idx_financial_notifications_read ON financial_notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_financial_notifications_store ON financial_notifications(store_id);
+CREATE INDEX IF NOT EXISTS idx_financial_notifications_read ON financial_notifications(is_read);
 
 -- ============================================
 -- TRIGGERS PARA ATUALIZAR updated_at
