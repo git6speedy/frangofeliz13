@@ -23,6 +23,11 @@ interface Product {
   name: string;
   stock_quantity: number;
   has_variations: boolean; // Adicionado
+  category_id: string | null;
+  categories?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface Variation {
@@ -50,7 +55,17 @@ export default function Stock() {
   const loadProductsAndVariations = async () => {
     const { data: productsData, error: productsError } = await supabase
       .from("products" as any)
-      .select("id, name, stock_quantity, has_variations")
+      .select(`
+        id, 
+        name, 
+        stock_quantity, 
+        has_variations,
+        category_id,
+        categories (
+          id,
+          name
+        )
+      `)
       .eq("store_id", profile.store_id)
       .order("name");
 
@@ -175,6 +190,23 @@ export default function Stock() {
   const productsWithoutVariations = products.filter(p => !p.has_variations);
   const productsWithVariations = products.filter(p => p.has_variations);
 
+  // Agrupar produtos por categoria
+  const groupedProducts = products.reduce((acc, product) => {
+    const categoryName = product.categories?.name || "Sem Categoria";
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  // Ordenar categorias alfabeticamente, mas "Sem Categoria" sempre por último
+  const sortedCategories = Object.keys(groupedProducts).sort((a, b) => {
+    if (a === "Sem Categoria") return 1;
+    if (b === "Sem Categoria") return -1;
+    return a.localeCompare(b);
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -244,76 +276,95 @@ export default function Stock() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {productsWithoutVariations.map((product) => (
-          <Card key={product.id} className="shadow-soft">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateStock(product.id, -1, false)}
-                  disabled={product.stock_quantity === 0}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                
-                <div className="flex-1 text-center">
-                  <p className="font-medium text-sm">{product.name}</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {product.stock_quantity}
-                  </p>
-                </div>
+      {sortedCategories.map((categoryName) => {
+        const categoryProducts = groupedProducts[categoryName];
+        const categoryProductsWithoutVariations = categoryProducts.filter(p => !p.has_variations);
+        const categoryProductsWithVariations = categoryProducts.filter(p => p.has_variations);
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateStock(product.id, 1, false)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        return (
+          <div key={categoryName} className="space-y-4">
+            {/* Cabeçalho da Categoria */}
+            <div className="border-b pb-2">
+              <h2 className="text-2xl font-semibold text-foreground">{categoryName}</h2>
+              <p className="text-sm text-muted-foreground">
+                {categoryProducts.length} {categoryProducts.length === 1 ? 'produto' : 'produtos'}
+              </p>
+            </div>
 
-        {productsWithVariations.map((product) => (
-          <Card key={product.id} className="shadow-soft col-span-1 md:col-span-2 lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{product.name} (Variações)</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-2">
-              {variations.filter(v => v.product_id === product.id).map(variation => (
-                <div key={variation.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-b-0 last:pb-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateStock(variation.id, -1, true)}
-                    disabled={variation.stock_quantity === 0}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="flex-1 text-center">
-                    <p className="font-medium text-sm">{variation.name}</p>
-                    <p className="text-xl font-bold text-primary">
-                      {variation.stock_quantity}
-                    </p>
-                  </div>
+            {/* Grid de Produtos da Categoria */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {categoryProductsWithoutVariations.map((product) => (
+                <Card key={product.id} className="shadow-soft">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateStock(product.id, -1, false)}
+                        disabled={product.stock_quantity === 0}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      
+                      <div className="flex-1 text-center">
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {product.stock_quantity}
+                        </p>
+                      </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateStock(variation.id, 1, true)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateStock(product.id, 1, false)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+
+              {categoryProductsWithVariations.map((product) => (
+                <Card key={product.id} className="shadow-soft col-span-1 md:col-span-2 lg:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{product.name} (Variações)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    {variations.filter(v => v.product_id === product.id).map(variation => (
+                      <div key={variation.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-b-0 last:pb-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateStock(variation.id, -1, true)}
+                          disabled={variation.stock_quantity === 0}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        
+                        <div className="flex-1 text-center">
+                          <p className="font-medium text-sm">{variation.name}</p>
+                          <p className="text-xl font-bold text-primary">
+                            {variation.stock_quantity}
+                          </p>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateStock(variation.id, 1, true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
